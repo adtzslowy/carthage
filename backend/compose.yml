@@ -7,10 +7,12 @@ services:
     environment:
       POSTGRES_DB: carthage
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
 
+    # Tidak perlu membuka database ke internet.
+    # Hapus ports jika hanya diakses oleh service Compose.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
     volumes:
       - carthage_postgres_data:/var/lib/postgresql/data
@@ -20,6 +22,49 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carthage_backend
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_NAME: carthage
+      DATABASE_SSLMODE: disable
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    # Hanya diperlukan jika ingin mengakses API langsung dari host.
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  frontend:
+    image: nginx:alpine
+    container_name: carthage_frontend
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8081:80"
+
+    volumes:
+      - ../frontend/dist:/usr/share/nginx/html:ro
+      - ../nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+    depends_on:
+      - backend
 
 volumes:
   carthage_postgres_data:

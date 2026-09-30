@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+!.env.example
+
+tmp/
+bin/
+dist/
+coverage/
+*.log
+
+Dockerfile*
+compose*.yml
