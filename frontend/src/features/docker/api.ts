@@ -8,7 +8,6 @@ import type {
 } from "../../types/docker";
 import type {
   DockerImage,
-  DockerImageDetail,
 } from "../../types/docker";
 
 interface ApiResponse<T> {

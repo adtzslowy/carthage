@@ -60,7 +60,6 @@ type SystemMetrics = {
   };
 };
 
-type ApiResponse = { data: SystemMetrics };
 type CpuPoint = { t: number; v: number };
 type Rates = { recv: number; sent: number };
 type Level = "ok" | "warn" | "crit";
