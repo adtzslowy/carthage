@@ -39,3 +39,17 @@ export interface DockerActionLog {
   error_message?: string;
   created_at: string;
 }
+
+export interface DockerImage {
+  id: string;
+  repo_tags: string[];
+  repo_digests: string[];
+  created_at: string;
+  size_bytes: number;
+  container_count: number;
+}
+
+export interface DockerImageDetail extends DockerImage {
+  architecture: string;
+  os: string;
+}

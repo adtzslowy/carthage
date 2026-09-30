@@ -2,11 +2,16 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/adtzslowy/carthage/internal/model"
 	"github.com/google/uuid"
+)
+
+var (
+	ErrInvalidImageID = errors.New("invalid Docker image ID")
 )
 
 type DockerRepository interface {
@@ -16,6 +21,10 @@ type DockerRepository interface {
 	StartContainer(ctx context.Context, containerID string) error
 	StopContainer(ctx context.Context, containerID string) error
 	RestartContainer(ctx context.Context, containerID string) error
+
+	ListImages(ctx context.Context) ([]model.DockerImage, error)
+	GetImage(ctx context.Context, imageID string) (model.DockerImageDetail, error)
+	RemoveImage(ctx context.Context, imageID string) error
 }
 
 type DockerActionLogRepository interface {
@@ -227,4 +236,37 @@ func (s *DockerService) ListActionLogsByUser(
 	}
 
 	return s.actionLogRepo.ListByUser(ctx, userID, limit, offset)
+}
+
+func (s *DockerService) ListImages(
+	ctx context.Context,
+) ([]model.DockerImage, error) {
+	return s.repository.ListImages(ctx)
+}
+
+func (s *DockerService) GetImage(
+	ctx context.Context,
+	imageID string,
+) (model.DockerImageDetail, error) {
+	if strings.TrimSpace(imageID) == "" {
+		return model.DockerImageDetail{}, ErrInvalidImageID
+	}
+
+	return s.repository.GetImage(ctx, imageID)
+}
+
+func (s *DockerService) RemoveImage(
+	ctx context.Context,
+	imageID string,
+) (model.DockerImageDetail, error) {
+	image, err := s.repository.GetImage(ctx, imageID)
+	if err != nil {
+		return model.DockerImageDetail{}, err
+	}
+
+	if err := s.repository.RemoveImage(ctx, imageID); err != nil {
+		return model.DockerImageDetail{}, err
+	}
+
+	return image, nil
 }

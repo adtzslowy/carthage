@@ -40,6 +40,9 @@ services:
       DATABASE_NAME: carthage
       DATABASE_SSLMODE: disable
 
+    group_add:
+      - "0"
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 

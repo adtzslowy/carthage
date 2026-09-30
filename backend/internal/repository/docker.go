@@ -4,12 +4,19 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
 	"strings"
 	"time"
 
 	"github.com/adtzslowy/carthage/internal/model"
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/moby/moby/client"
+)
+
+var ErrImageInUse = errors.New(
+	"Docker image is still used by one or more containers",
 )
 
 type DockerRepository struct {
@@ -280,4 +287,117 @@ func (r *DockerRepository) RestartContainer(
 		client.ContainerRestartOptions{},
 	)
 	return err
+}
+
+func (r *DockerRepository) ListImages(
+	ctx context.Context,
+) ([]model.DockerImage, error) {
+	result, err := r.client.ImageList(
+		ctx,
+		client.ImageListOptions{},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	containers, err := r.client.ContainerList(
+		ctx,
+		client.ContainerListOptions{All: true},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	containerCounts := make(map[string]int)
+	for _, container := range containers.Items {
+		containerCounts[container.ImageID]++
+	}
+
+	images := make([]model.DockerImage, 0, len(result.Items))
+	for _, item := range result.Items {
+		images = append(images, model.DockerImage{
+			ID:             item.ID,
+			RepoTags:       item.RepoTags,
+			RepoDigests:    item.RepoDigests,
+			CreatedAt:      time.Unix(item.Created, 0).UTC(),
+			Size:           item.Size,
+			ContainerCount: containerCounts[item.ID],
+		})
+	}
+
+	return images, nil
+}
+
+func (r *DockerRepository) GetImage(
+	ctx context.Context,
+	imageID string,
+) (model.DockerImageDetail, error) {
+	log.Printf("Docker ImageInspect requested: imageID=%q", imageID)
+
+	result, err := r.client.ImageInspect(ctx, imageID)
+	if err != nil {
+		log.Printf("Docker ImageInspect failed: imageID=%q, error=%v", imageID, err)
+		return model.DockerImageDetail{}, fmt.Errorf(
+			"inspect Docker image %q: %w",
+			imageID,
+			err,
+		)
+	}
+
+	createdAt, err := time.Parse(time.RFC3339Nano, result.Created)
+	if err != nil {
+		return model.DockerImageDetail{}, fmt.Errorf(
+			"parse Docker image creation time: %w",
+			err,
+		)
+	}
+
+	return model.DockerImageDetail{
+		DockerImage: model.DockerImage{
+			ID:          result.ID,
+			RepoTags:    result.RepoTags,
+			RepoDigests: result.RepoDigests,
+			CreatedAt:   createdAt,
+			Size:        result.Size,
+		},
+		Architecture: result.Architecture,
+		OS:           result.Os,
+	}, nil
+}
+
+func (r *DockerRepository) RemoveImage(
+	ctx context.Context,
+	imageID string,
+) error {
+	if strings.TrimSpace(imageID) == "" {
+		return fmt.Errorf("image ID is required")
+	}
+
+	containers, err := r.client.ContainerList(
+		ctx,
+		client.ContainerListOptions{All: true},
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, container := range containers.Items {
+		if container.ImageID == imageID {
+			return ErrImageInUse
+		}
+	}
+
+	_, err = r.client.ImageRemove(
+		ctx,
+		imageID,
+		client.ImageRemoveOptions{
+			Force:         false,
+			PruneChildren: false,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("remove Docker image %q: %w", imageID, err)
+	}
+
+	return nil
 }

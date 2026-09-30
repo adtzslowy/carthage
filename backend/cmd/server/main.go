@@ -49,6 +49,8 @@ func main() {
 		dockerActionLogRepo,
 	)
 
+	dockerImageHandler := handler.NewDockerImageHandler(dockerService)
+
 	authService := service.NewAuthService(
 		userRepository,
 		passwordService,
@@ -79,6 +81,7 @@ func main() {
 		authHandler,
 		systemHandler,
 		dockerHandler,
+		dockerImageHandler,
 		tokenService,
 	)
 

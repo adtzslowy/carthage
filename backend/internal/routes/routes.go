@@ -12,6 +12,7 @@ func Setup(
 	authHandler *handler.AuthHandler,
 	systemHandler *handler.SystemHandler,
 	dockerHandler *handler.DockerHandler,
+	dockerImageHandler *handler.DockerImageHandler,
 	tokenService *service.TokenService,
 ) {
 	api := app.Group("/api")
@@ -50,6 +51,10 @@ func Setup(
 	docker.Post("/containers/:id/start", dockerHandler.StartContainer)
 	docker.Post("/containers/:id/stop", dockerHandler.StopContainer)
 	docker.Post("/containers/:id/restart", dockerHandler.RestartContainer)
+
+	docker.Get("/images", dockerImageHandler.ListImages)
+	docker.Get("/images/:id", dockerImageHandler.GetImage)
+	docker.Delete("/images/:id", dockerImageHandler.RemoveImage)
 
 	docker.Get("/actions", dockerHandler.ListActionLogs)
 }

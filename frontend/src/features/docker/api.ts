@@ -6,6 +6,10 @@ import type {
   DockerStats,
   DockerActionLog,
 } from "../../types/docker";
+import type {
+  DockerImage,
+  DockerImageDetail,
+} from "../../types/docker";
 
 interface ApiResponse<T> {
   data: T;
@@ -80,4 +84,29 @@ export async function getDockerActionLogs(
   );
 
   return response.data;
+}
+
+export async function getDockerImages(
+  signal?: AbortSignal
+): Promise<DockerImage[]> {
+  const response = await api.get<ApiResponse<DockerImage[]>>(
+    "/docker/images",
+    { signal }
+  );
+
+  return response.data.data ?? [];
+}
+
+export const getDockerImage = async (id: string) => {
+  const response = await api.get(
+    `/docker/images/${id}`,
+  );
+
+  return response.data.data;
+};
+
+export async function removeDockerImage(id: string): Promise<void> {
+  await api.delete(
+    `/docker/images/${encodeURIComponent(id)}`
+  );
 }

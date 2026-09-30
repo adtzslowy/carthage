@@ -1,25 +1,54 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { pathname } = useLocation();
+
+  // Tutup drawer otomatis setelah pindah halaman.
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
+  // Escape untuk menutup, dan kunci scroll halaman selama drawer terbuka.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [sidebarOpen]);
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="flex min-h-dvh bg-zinc-950 text-zinc-100">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block sticky top-0 h-screen shrink-0">
+      <aside className="sticky top-0 hidden h-screen shrink-0 lg:block">
         <Sidebar />
       </aside>
 
       {/* Mobile sidebar */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigasi"
+          className="fixed inset-0 z-50 lg:hidden"
+        >
           <button
             type="button"
-            aria-label="Close navigation"
+            aria-label="Tutup navigasi"
             className="absolute inset-0 bg-black/70"
             onClick={() => setSidebarOpen(false)}
           />
@@ -28,8 +57,8 @@ export default function DashboardLayout() {
             <button
               type="button"
               onClick={() => setSidebarOpen(false)}
-              aria-label="Close sidebar"
-              className="absolute left-full top-4 ml-2 rounded-lg bg-zinc-900 p-2 text-zinc-300"
+              aria-label="Tutup navigasi"
+              className="absolute left-full top-4 ml-2 rounded-lg bg-zinc-900 p-2 text-zinc-300 hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
             >
               <X size={18} />
             </button>
@@ -39,9 +68,9 @@ export default function DashboardLayout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar onMenuClick={() => setSidebarOpen(true)} />
-        <div className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );
