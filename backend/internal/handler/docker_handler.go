@@ -114,7 +114,7 @@ func (h *DockerHandler) RestartContainer(c *fiber.Ctx) error {
 func (h *DockerHandler) containerAction(
 	c *fiber.Ctx,
 	action string,
-	operation func(context.Context, string) error,
+	operation func(context.Context, uuid.UUID, string) error,
 ) error {
 	containerID := c.Params("id")
 	if containerID == "" {
@@ -123,10 +123,17 @@ func (h *DockerHandler) containerAction(
 		})
 	}
 
+	userID, err := authenticatedUserID(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "unauthorized",
+		})
+	}
+
 	ctx, cancel := context.WithTimeout(c.UserContext(), 30*time.Second)
 	defer cancel()
 
-	if err := operation(ctx, containerID); err != nil {
+	if err := operation(ctx, userID, containerID); err != nil {
 		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
 			"error":   "docker_action_failed",
 			"message": "Gagal menjalankan aksi " + action + " pada container",
@@ -188,4 +195,18 @@ func (h *DockerHandler) ListActionLogs(c *fiber.Ctx) error {
 			"offset": offset,
 		},
 	})
+}
+
+func authenticatedUserID(c *fiber.Ctx) (uuid.UUID, error) {
+	userIDString, ok := c.Locals("userID").(string)
+	if !ok {
+		return uuid.Nil, fiber.ErrUnauthorized
+	}
+
+	userID, err := uuid.Parse(userIDString)
+	if err != nil {
+		return uuid.Nil, fiber.ErrUnauthorized
+	}
+
+	return userID, nil
 }

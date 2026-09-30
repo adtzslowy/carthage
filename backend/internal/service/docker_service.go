@@ -73,6 +73,7 @@ func (s *DockerService) GetContainerLogs(
 
 func (s *DockerService) recordAction(
 	ctx context.Context,
+	userID uuid.UUID,
 	containerID string,
 	action string,
 	actionErr error,
@@ -86,6 +87,7 @@ func (s *DockerService) recordAction(
 	}
 
 	log := &model.DockerActionLog{
+		UserID:        &userID,
 		ContainerID:   containerID,
 		ContainerName: containerID,
 		Action:        action,
@@ -98,6 +100,7 @@ func (s *DockerService) recordAction(
 
 func (s *DockerService) StartContainer(
 	ctx context.Context,
+	userID uuid.UUID,
 	containerID string,
 ) error {
 	if strings.TrimSpace(containerID) == "" {
@@ -105,17 +108,24 @@ func (s *DockerService) StartContainer(
 	}
 
 	actionErr := s.repository.StartContainer(ctx, containerID)
-	logErr := s.recordAction(ctx, containerID, "start", actionErr)
+	logErr := s.recordAction(ctx, userID, containerID, "start", actionErr)
 
 	if actionErr != nil {
 		if logErr != nil {
-			return fmt.Errorf("%w; additionally, action log failed: %v", actionErr, logErr)
+			return fmt.Errorf(
+				"%w; additionally, action log failed: %v",
+				actionErr,
+				logErr,
+			)
 		}
 		return actionErr
 	}
 
 	if logErr != nil {
-		return fmt.Errorf("container started, but action log failed: %w", logErr)
+		return fmt.Errorf(
+			"container started, but action log failed: %w",
+			logErr,
+		)
 	}
 
 	return nil
@@ -123,6 +133,7 @@ func (s *DockerService) StartContainer(
 
 func (s *DockerService) StopContainer(
 	ctx context.Context,
+	userID uuid.UUID,
 	containerID string,
 ) error {
 	if strings.TrimSpace(containerID) == "" {
@@ -130,17 +141,24 @@ func (s *DockerService) StopContainer(
 	}
 
 	actionErr := s.repository.StopContainer(ctx, containerID)
-	logErr := s.recordAction(ctx, containerID, "stop", actionErr)
+	logErr := s.recordAction(ctx, userID, containerID, "stop", actionErr)
 
 	if actionErr != nil {
 		if logErr != nil {
-			return fmt.Errorf("%w; additionally, action log failed: %v", actionErr, logErr)
+			return fmt.Errorf(
+				"%w; additionally, action log failed: %v",
+				actionErr,
+				logErr,
+			)
 		}
 		return actionErr
 	}
 
 	if logErr != nil {
-		return fmt.Errorf("container stopped, but action log failed: %w", logErr)
+		return fmt.Errorf(
+			"container stopped, but action log failed: %w",
+			logErr,
+		)
 	}
 
 	return nil
@@ -148,6 +166,7 @@ func (s *DockerService) StopContainer(
 
 func (s *DockerService) RestartContainer(
 	ctx context.Context,
+	userID uuid.UUID,
 	containerID string,
 ) error {
 	if strings.TrimSpace(containerID) == "" {
@@ -155,17 +174,24 @@ func (s *DockerService) RestartContainer(
 	}
 
 	actionErr := s.repository.RestartContainer(ctx, containerID)
-	logErr := s.recordAction(ctx, containerID, "restart", actionErr)
+	logErr := s.recordAction(ctx, userID, containerID, "restart", actionErr)
 
 	if actionErr != nil {
 		if logErr != nil {
-			return fmt.Errorf("%w; additionally, action log failed: %v", actionErr, logErr)
+			return fmt.Errorf(
+				"%w; additionally, action log failed: %v",
+				actionErr,
+				logErr,
+			)
 		}
 		return actionErr
 	}
 
 	if logErr != nil {
-		return fmt.Errorf("container restarted, but action log failed: %w", logErr)
+		return fmt.Errorf(
+			"container restarted, but action log failed: %w",
+			logErr,
+		)
 	}
 
 	return nil
