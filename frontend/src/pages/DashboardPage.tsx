@@ -139,7 +139,7 @@ export default function DashboardPage() {
           value={system ? `${system.disk.usage_percent.toFixed(1)}%` : '--'}
           subtitle={
             system
-              ? `${formatBytes(system.disk.used_bytes)} / ${formatBytes(system.disk.total_bytes)}`
+              ? `${formatBytes(system.disk.Used)} / ${formatBytes(system.disk.total_bytes)}`
               : 'Loading metrics'
           }
           icon={HardDrive}

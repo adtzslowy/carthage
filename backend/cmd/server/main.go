@@ -33,17 +33,21 @@ func main() {
 
 	userRepository := repository.NewUserRepository(db)
 	dockerActionLogRepo := repository.NewDockerActionLogRepository(db)
+
 	dockerRepo, err := repository.NewDockerRepository()
 	if err != nil {
-		log.Error.Printf("Failed to initialize Docker client: %v", err)
+		log.Error.Printf("failed to initialize Docker client: %v", err)
 		return
 	}
 	defer dockerRepo.Close()
 
-	dockerService := service.NewDockerService(dockerRepo, dockerActionLogRepo)
-
 	passwordService := service.NewPasswordService()
 	tokenService := service.NewTokenService(cfg.JWT)
+
+	dockerService := service.NewDockerService(
+		dockerRepo,
+		dockerActionLogRepo,
+	)
 
 	authService := service.NewAuthService(
 		userRepository,
@@ -53,6 +57,8 @@ func main() {
 
 	systemMonitor := monitor.NewSystemMonitor()
 	systemService := service.NewSystemService(systemMonitor)
+
+	authHandler := handler.NewAuthHandler(authService)
 	systemHandler := handler.NewSystemHandler(systemService)
 	dockerHandler := handler.NewDockerHandler(dockerService)
 
@@ -61,9 +67,12 @@ func main() {
 
 	systemService.Start(ctx, 2*time.Second)
 
-	authHandler := handler.NewAuthHandler(authService)
-
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		AppName:      cfg.App.Name,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	})
 
 	routes.Setup(
 		app,
@@ -88,6 +97,7 @@ func main() {
 	}()
 
 	signalChan := make(chan os.Signal, 1)
+
 	signal.Notify(
 		signalChan,
 		os.Interrupt,
@@ -98,13 +108,20 @@ func main() {
 	select {
 	case sig := <-signalChan:
 		log.Info.Printf("shutdown signal received: %s", sig)
+
 	case err := <-serverErr:
 		log.Error.Printf("server error: %v", err)
 	}
 
 	cancel()
 
-	if err := app.Shutdown(); err != nil {
+	shutdownCtx, shutdownCancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+	defer shutdownCancel()
+
+	if err := app.ShutdownWithContext(shutdownCtx); err != nil {
 		log.Error.Printf("failed to shutdown server: %v", err)
 	}
 

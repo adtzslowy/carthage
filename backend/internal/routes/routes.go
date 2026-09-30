@@ -16,18 +16,15 @@ func Setup(
 ) {
 	api := app.Group("/api")
 
-	// Health check
 	api.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"status": "ok",
 		})
 	})
 
-	// Public authentication routes
 	auth := api.Group("/auth")
 	auth.Post("/login", authHandler.Login)
 
-	// Protected routes
 	protected := api.Group(
 		"",
 		middleware.Auth(tokenService),
