@@ -1,59 +1,45 @@
-import { api } from '../../lib/api';
-import type {DockerAction, DockerContainer, DockerStats} from '../../types/docker';
+
+import { api } from "../../lib/api";
+import type {
+  DockerAction,
+  DockerContainer,
+  DockerStats,
+  DockerActionLog,
+} from "../../types/docker";
 
 interface ApiResponse<T> {
-    data: T;
+  data: T;
 }
 
-export async function getDockerContainers(): Promise<DockerContainer[]> {
-    const response = await api.get<ApiResponse<DockerContainer[]>>(
-        "/docker/containers"
-    );
-
-    return response.data.data ?? [];
+export interface PaginatedDockerActionLogs {
+  data: DockerActionLog[];
+  meta: {
+    limit: number;
+    offset: number;
+  };
 }
 
-export async function getDockerStats(id: string, signal?: AbortSignal): Promise<DockerStats> {
-    const response = await api.get<ApiResponse<DockerStats>>(
-        `/docker/containers/${encodeURIComponent(id)}/stats`,
-        {signal}
-    );
+export async function getDockerContainers(
+  signal?: AbortSignal
+): Promise<DockerContainer[]> {
+  const response = await api.get<ApiResponse<DockerContainer[]>>(
+    "/docker/containers",
+    { signal }
+  );
 
-    return response.data.data;
+  return response.data.data ?? [];
 }
 
-function normalizeLogs(payload: unknown): string {
-  if (typeof payload === "string") {
-    try {
-      return normalizeLogs(JSON.parse(payload));
-    } catch {
-      return payload;
-    }
-  }
+export async function getDockerStats(
+  id: string,
+  signal?: AbortSignal
+): Promise<DockerStats> {
+  const response = await api.get<ApiResponse<DockerStats>>(
+    `/docker/containers/${encodeURIComponent(id)}/stats`,
+    { signal }
+  );
 
-  if (Array.isArray(payload)) {
-    return payload.map((line) => String(line)).join("\n");
-  }
-
-  if (payload && typeof payload === "object") {
-    const record = payload as Record<string, unknown>;
-
-    if ("data" in record) {
-      return normalizeLogs(record.data);
-    }
-
-    if ("logs" in record) {
-      return normalizeLogs(record.logs);
-    }
-
-    if ("message" in record && typeof record.message === "string") {
-      return record.message;
-    }
-
-    return JSON.stringify(payload, null, 2);
-  }
-
-  return payload == null ? "" : String(payload);
+  return response.data.data;
 }
 
 export async function getDockerLogs(
@@ -61,16 +47,14 @@ export async function getDockerLogs(
   tail = 100,
   signal?: AbortSignal
 ): Promise<string> {
-  const response = await api.get<string>(
-    `/docker/containers/${encodeURIComponent(id)}/logs`,
-    {
-      params: { tail },
-      responseType: "text",
-      signal,
-    }
-  );
+  const response = await api.get<
+    ApiResponse<{ container_id: string; logs: string }>
+  >(`/docker/containers/${encodeURIComponent(id)}/logs`, {
+    params: { tail },
+    signal,
+  });
 
-  return normalizeLogs(response.data);
+  return response.data.data?.logs ?? "";
 }
 
 export async function performDockerAction(
@@ -80,4 +64,20 @@ export async function performDockerAction(
   await api.post(
     `/docker/containers/${encodeURIComponent(id)}/${action}`
   );
+}
+
+export async function getDockerActionLogs(
+  limit = 20,
+  offset = 0,
+  signal?: AbortSignal
+): Promise<PaginatedDockerActionLogs> {
+  const response = await api.get<PaginatedDockerActionLogs>(
+    "/docker/actions",
+    {
+      params: { limit, offset },
+      signal,
+    }
+  );
+
+  return response.data;
 }

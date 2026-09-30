@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { X } from "lucide-react";
 import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
+import TopBar from "./TopBar";
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -38,7 +38,7 @@ export default function DashboardLayout() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar onMenuClick={() => setSidebarOpen(true)} />
+        <TopBar onMenuClick={() => setSidebarOpen(true)} />
         <div className="min-w-0 flex-1">
           <Outlet />
         </div>

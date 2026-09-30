@@ -1,3 +1,4 @@
+
 export interface DockerPort {
   ip?: string;
   private_port: number;
@@ -27,3 +28,14 @@ export interface DockerStats {
 }
 
 export type DockerAction = "start" | "stop" | "restart";
+
+export interface DockerActionLog {
+  id: string;
+  user_id?: string;
+  container_id: string;
+  container_name: string;
+  action: DockerAction;
+  status: "success" | "failed";
+  error_message?: string;
+  created_at: string;
+}

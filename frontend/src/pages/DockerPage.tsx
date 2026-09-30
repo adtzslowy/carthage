@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
-  Box,
   Boxes,
   CheckCircle2,
   CircleAlert,
@@ -13,8 +12,6 @@ import {
   RefreshCw,
   Search,
   Server,
-  Square,
-  Terminal,
 } from "lucide-react";
 
 import {api} from "../lib/api";
@@ -103,10 +100,6 @@ function isContainerRunning(container: DockerContainer) {
     value === "up" ||
     value.includes("healthy")
   );
-}
-
-function getContainerStatus(container: DockerContainer) {
-  return isContainerRunning(container) ? "running" : "stopped";
 }
 
 function StatCard({

@@ -1,7 +1,7 @@
 import { Menu, PanelLeft } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
-interface TopbarProps {
+interface TopBarProps {
   onMenuClick: () => void;
 }
 
@@ -13,7 +13,7 @@ const pageNames: Record<string, string> = {
   "/dashboard/settings": "Settings",
 };
 
-export default function Topbar({ onMenuClick }: TopbarProps) {
+export default function TopBar({ onMenuClick }: TopBarProps) {
   const location = useLocation();
   const title = pageNames[location.pathname] ?? "Carthage";
 

@@ -1,6 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  Activity,
   Boxes,
   LayoutDashboard,
   LogOut,
