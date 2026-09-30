@@ -104,17 +104,23 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+
       {/* Brand */}
-      <div className="flex h-16 shrink-0 items-center gap-3 px-5">
-        <div className="flex size-9 items-center justify-center rounded-xl bg-zinc-900 text-emerald-400 dark:bg-zinc-800">
-          <Server className="size-5" />
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-zinc-200 px-5 dark:border-zinc-800">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-emerald-400 dark:bg-zinc-800">
+          <Server className="size-[18px]" />
         </div>
-        <div className="min-w-0">
+
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold tracking-tight text-zinc-950 dark:text-zinc-100">
             Carthage
           </p>
-          <p className="text-xs text-zinc-500">Home Server</p>
+          <p className="mt-0.5 text-[11px] text-zinc-500">Home Server</p>
         </div>
+
+        <span className="rounded-md border border-zinc-200 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
+          v1.0
+        </span>
       </div>
 
       <div className="mx-4 border-t border-zinc-200 dark:border-zinc-800" />
